@@ -1,0 +1,17 @@
+# code snippets folder
+dev/
+
+# Generate cpu profile file
+cpuprofile
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# vscode IDE specific
+.vscode
+
+# tracking list. 
+TODO.txt

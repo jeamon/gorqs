@@ -204,9 +204,9 @@ func (b basicTestJob) Run() error {
 }
 
 func initializeSyncQueue() Queuer {
-	return New(SYNC_MODE)
+	return New(MODE_SYNC)
 }
 
 func initializeAsyncQueue() Queuer {
-	return New(ASYNC_MODE)
+	return New(MODE_ASYNC)
 }

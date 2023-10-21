@@ -9,8 +9,8 @@ import (
 type Mode uint
 
 const (
-	SYNC_MODE Mode = iota
-	ASYNC_MODE
+	MODE_SYNC Mode = iota
+	MODE_ASYNC
 )
 
 type Jobber interface {
@@ -40,9 +40,9 @@ func New(m Mode) *Queue {
 // It returns once the context is cancelled.
 func (q *Queue) Start(ctx context.Context) error {
 	switch q.mode {
-	case SYNC_MODE:
+	case MODE_SYNC:
 		return q.syncStart(ctx)
-	case ASYNC_MODE:
+	case MODE_ASYNC:
 		return q.asyncStart(ctx)
 	default:
 		return fmt.Errorf("invalid mode")

@@ -5,7 +5,7 @@ The mode defines wether each added job should be processed *synchronously* or *a
 
 ## Features
 
-`goq.New(goq.SYNC_MODE|goq.ASYNC_MODE)` method provides a Queue object which implements an interface with below actions.
+`goq.New(goq.MODE_SYNC)` or `goq.New(goq.MODE_ASYNC)` method provides a Queue object which implements an interface with below actions.
 
 | Action | Description |
 |:------ | :-------------------------------------- |

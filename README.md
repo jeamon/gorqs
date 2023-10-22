@@ -1,22 +1,24 @@
 # goq
 
-`goq` means *Go jobs Queue*. This is a multi-features go-based concurrent-safe library to **queue & execute** jobs. You can start the Queue platform into synchronous or asynchronous mode.
-The mode defines wether each added job should be processed *synchronously* or *asynchronously*. Be aware that adding a job to the Queue system is always a non-blocking operation. 
+`goq` means *Go jobs Queue*. This is a multi-features go-based concurrent-safe library to **queue & execute** jobs and records the execution result. You can start the Queue platform into synchronous or asynchronous mode.
+The mode defines wether each added job should be processed *synchronously* or *asynchronously*. Be aware that adding a job to the Queue system is always a non-blocking operation and returns the job id on success. 
 
 ## Features
 
-`goq.New(goq.MODE_SYNC)` or `goq.New(goq.MODE_ASYNC)` method provides a Queue object which implements an interface with below actions.
+`goq.New(goq.MODE_SYNC | goq.TRACK_JOBS)` or `goq.New(goq.MODE_ASYNC | goq.TRACK_JOBS)` method provides a Queue object which implements the `Queuer` interface with below actions.
 
 | Action | Description |
 |:------ | :-------------------------------------- |
 | Start(context.Context) error | starts the jobs queue |
 | Stop(context.Context) error | stops the jobs queue |
-| Push(context.Context, Jobber) error | adds a job to the queue asynchronously |
+| Push(context.Context, Runner) (int64, error) | adds a job to the queue asynchronously |
+| Result(context.Context, int64) error | gets result execution of given job |
+| Clear | delete all jobs results records |
 
-*An acceptable Job should implement the `Jobber` interface defined as below :*
+*An acceptable runnable job should implement the `Runner` interface defined as below :*
 
 ```go
-type Jobber interface {
+type Runner interface {
 	Run() error
 }
 ```

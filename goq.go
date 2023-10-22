@@ -112,7 +112,7 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 		default:
 			if !q.stopped.Load() {
 				id := q.counter.Add(1)
-				q.records.Store(id, ErrNotReady)
+				q.recordFn(id, ErrNotReady)
 				q.jobsChan <- &Job{id, r}
 				return id, nil
 			}

@@ -28,8 +28,12 @@ func New(flags Flag, size, tracks int) *Queue {
 		q.recordFn = func(id int64, err error) {
 			q.records.Store(id, err)
 		}
+		q.resultFn = func(ctx context.Context, id int64) error {
+			return q.result(ctx, id)
+		}
 	} else {
 		q.recordFn = func(id int64, err error) {}
+		q.resultFn = func(ctx context.Context, id int64) error { return ErrNotImplemented }
 	}
 	return q
 }
@@ -89,7 +93,7 @@ func (q *Queue) asyncStart(ctx context.Context) error {
 	for {
 		select {
 		case j := <-q.jobsChan:
-			go func() { q.recordFn(j.GetID(), j.Run()) }()
+			go q.recordFn(j.GetID(), j.Run())
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
@@ -140,11 +144,15 @@ func (q *Queue) Clear() {
 	})
 }
 
-// Result provides the result `error` of a given Job Runner based
-// on its ID. If the job id was found, it delete the record from
-// the map. It returns ErrNotFound if the ID does not exist or
-// ErrNotReady if the job runner did not return yet.
+// Result provides the result `error` of a given Job Runner based on its ID.
+// If the job id was found, it delete the record from the map. It returns
+// ErrNotFound if the ID does not exist or ErrNotReady if the job runner did
+// not return yet. ErrNotImplemented is returned if the feature was not enabled.
 func (q *Queue) Result(ctx context.Context, id int64) error {
+	return q.resultFn(ctx, id)
+}
+
+func (q *Queue) result(ctx context.Context, id int64) error {
 	v, found := q.records.LoadAndDelete(id)
 	if !found {
 		return ErrNotFound

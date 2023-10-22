@@ -15,7 +15,8 @@ const (
 )
 
 var (
-	ErrNotReady = errors.New("no ready")
-	ErrNotFound = errors.New("not found")
-	ErrInvalid  = errors.New("found non error result")
+	ErrNotReady       = errors.New("no ready")
+	ErrNotFound       = errors.New("not found")
+	ErrInvalid        = errors.New("found non error result")
+	ErrNotImplemented = errors.New("feature not enabled. add TRACK_JOBS flag when creating the queue")
 )

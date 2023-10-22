@@ -9,7 +9,7 @@ import (
 // Queuer defines operations on a Queue.
 type Queuer interface {
 	Start(ctx context.Context) error
-	Push(ctx context.Context, j Runner) (int64, error)
+	Push(ctx context.Context, r Runner) (int64, error)
 	Stop(ctx context.Context) error
 	Result(ctx context.Context, id int64) error
 	Clear()

@@ -3,37 +3,35 @@ package goq
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
+	"sync"
 )
 
-type Mode uint
-
-const (
-	MODE_SYNC Mode = iota
-	MODE_ASYNC
-)
-
-type Jobber interface {
-	Run() error
-}
-
-type Queuer interface {
-	Start(ctx context.Context) error
-	Push(ctx context.Context, j Jobber) error
-	Stop(ctx context.Context) error
-}
-
-type Queue struct {
-	jobsChan chan Jobber
-	stopped  atomic.Bool
-	mode     Mode
-}
-
-func New(m Mode) *Queue {
-	return &Queue{
+// New creates an instance of a workable Queue.
+func New(flags Flag, size, tracks int) *Queue {
+	q := &Queue{
 		jobsChan: make(chan Jobber),
-		mode:     m,
+		records:  sync.Map{},
+		size:     size,
 	}
+
+	if flags&MODE_ASYNC != 0 {
+		q.mode = MODE_ASYNC
+	} else {
+		q.mode = MODE_SYNC
+	}
+
+	if q.mode == MODE_SYNC && size < SYNC_QUEUE_SIZE {
+		q.size = SYNC_QUEUE_SIZE
+	}
+
+	if flags&TRACK_JOBS != 0 {
+		q.recordFn = func(id int64, err error) {
+			q.records.Store(id, err)
+		}
+	} else {
+		q.recordFn = func(id int64, err error) {}
+	}
+	return q
 }
 
 // Start pulls job from the queue and runs them.
@@ -51,16 +49,20 @@ func (q *Queue) Start(ctx context.Context) error {
 
 // syncStart uses a single worker with an internal buffered channel
 // to queue and process in order received jobs. The internal queue
-// size is 512. One job is processed at a given time.
+// size is SYNC_QUEUE_SIZE. One job is processed at a time.
 func (q *Queue) syncStart(ctx context.Context) error {
-	iq := make(chan Jobber, 512)
+	iq := make(chan Jobber, q.size)
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case j := <-iq:
-				_ = j.Run()
+				q.recordFn(j.GetID(), j.Run())
+			default:
+				if q.stopped.Load() {
+					return
+				}
 			}
 		}
 	}()
@@ -80,12 +82,14 @@ func (q *Queue) syncStart(ctx context.Context) error {
 }
 
 // asyncStart pulls job from the queue and runs them.
-// It returns once the context is cancelled.
+// It returns once the Queue is stopped or the context
+// is done. Each job returned error result is stored
+// into the records map.
 func (q *Queue) asyncStart(ctx context.Context) error {
 	for {
 		select {
 		case j := <-q.jobsChan:
-			go func() { _ = j.Run() }()
+			go func() { q.recordFn(j.GetID(), j.Run()) }()
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
@@ -96,17 +100,21 @@ func (q *Queue) asyncStart(ctx context.Context) error {
 	}
 }
 
-// Push adds a job to the queue for processing into a non-blocking fashion.
-// If the queue is closed, it should retry until the context is cancelled.
-func (q *Queue) Push(ctx context.Context, j Jobber) error {
+// Push is a non-blocking method that adds job to the queue for processing.
+// If the queue is closed, it should retry until the Queue is closed or
+// the context is done. If added, this means the job result was recorded
+// with the initial value `ErrNotReady` and it returns the associated job id.
+func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return -1, ctx.Err()
 		default:
 			if !q.stopped.Load() {
-				q.jobsChan <- j
-				return nil
+				id := q.counter.Add(1)
+				q.records.Store(id, ErrNotReady)
+				q.jobsChan <- &Job{id, r}
+				return id, nil
 			}
 		}
 	}
@@ -122,4 +130,30 @@ func (q *Queue) Stop(ctx context.Context) error {
 		close(q.jobsChan)
 		return nil
 	}
+}
+
+// Clear removes all records from the map.
+func (q *Queue) Clear() {
+	q.records.Range(func(key interface{}, value interface{}) bool {
+		q.records.Delete(key)
+		return true
+	})
+}
+
+// Result provides the result `error` of a given Job Runner based
+// on its ID. If the job id was found, it delete the record from
+// the map. It returns ErrNotFound if the ID does not exist or
+// ErrNotReady if the job runner did not return yet.
+func (q *Queue) Result(ctx context.Context, id int64) error {
+	v, found := q.records.LoadAndDelete(id)
+	if !found {
+		return ErrNotFound
+	}
+
+	err, found := v.(error)
+	if !found {
+		return ErrInvalid
+	}
+
+	return err
 }

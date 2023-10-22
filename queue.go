@@ -6,6 +6,23 @@ import (
 	"sync/atomic"
 )
 
+// Flag describes desired capabilities from the queue service at creation.
+type Flag uint8
+
+// SYNC_QUEUE_SIZE default queue buffer size when using the queue into synchronous fashion.
+const SYNC_QUEUE_SIZE = 32
+
+const (
+	// Allows Queue to process incoming jobs in order of arrival and one at a time.
+	MODE_SYNC Flag = 1 << iota
+
+	// Allows Queue to process incoming jobs immediately so asynchronously.
+	MODE_ASYNC
+
+	// Allows to cache jobs execution results for further consultation.
+	TRACK_JOBS
+)
+
 // Queuer defines possible operations on a Queue.
 type Queuer interface {
 	// Start opens the Queue to accept jobs and triggers the worker routine.

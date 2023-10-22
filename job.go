@@ -1,4 +1,4 @@
-package goq
+package gorqs
 
 type Runner interface {
 	Run() error

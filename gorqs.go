@@ -1,4 +1,7 @@
-package goq
+// Package gorqs (stands for `Go Runnable Queue Service`) provides routines to queue and execute runnable jobs and caches
+// their execution result for later consultation. The Queue processor can run into synchronous or asynchronous mode.
+// Adding a job to the Queue service is always a non-blocking operation and returns a unique job id on success.
+package gorqs
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package goq
+package gorqs
 
 import (
 	"context"

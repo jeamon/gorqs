@@ -1,4 +1,4 @@
-module github.com/jeamon/goq
+module github.com/jeamon/gorqs
 
 go 1.16
 

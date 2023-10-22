@@ -20,8 +20,8 @@ type Queuer interface {
 	Stop(ctx context.Context) error
 
 	// Result provides the cached result of a Runner associated to a given job id.
-	// ErrNotFound is returned if the job `id` does not exist. ErrNotReady if the
-	// job runner did not return yet (pending into the queue or still running).
+	// ErrNotFound is returned if the job `id` does not exist. ErrPending if the
+	// job runner did not start yet. ErrRunning if picked but still being running.
 	// If the job `error` result is fetched, the entry is removed from the cache.
 	Result(ctx context.Context, id int64) error
 

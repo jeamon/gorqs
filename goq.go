@@ -62,6 +62,7 @@ func (q *Queue) syncStart(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case j := <-iq:
+				q.recordFn(j.GetID(), ErrRunning)
 				q.recordFn(j.GetID(), j.Run())
 			default:
 				if q.stopped.Load() {
@@ -93,7 +94,10 @@ func (q *Queue) asyncStart(ctx context.Context) error {
 	for {
 		select {
 		case j := <-q.jobsChan:
-			go q.recordFn(j.GetID(), j.Run())
+			go func() {
+				q.recordFn(j.GetID(), ErrRunning)
+				q.recordFn(j.GetID(), j.Run())
+			}()
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
@@ -107,7 +111,7 @@ func (q *Queue) asyncStart(ctx context.Context) error {
 // Push is a non-blocking method that adds job to the queue for processing.
 // If the queue is closed, it should retry until the Queue is closed or
 // the context is done. If added, this means the job result was recorded
-// with the initial value `ErrNotReady` and it returns the associated job id.
+// with the initial value `ErrPending` and it returns the associated job id.
 func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 	for {
 		select {
@@ -116,7 +120,7 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 		default:
 			if !q.stopped.Load() {
 				id := q.counter.Add(1)
-				q.recordFn(id, ErrNotReady)
+				q.recordFn(id, ErrPending)
 				q.jobsChan <- &Job{id, r}
 				return id, nil
 			}
@@ -146,12 +150,15 @@ func (q *Queue) Clear() {
 
 // Result provides the result `error` of a given Job Runner based on its ID.
 // If the job id was found, it delete the record from the map. It returns
-// ErrNotFound if the ID does not exist or ErrNotReady if the job runner did
-// not return yet. ErrNotImplemented is returned if the feature was not enabled.
+// ErrNotFound if the `id` does not exist or ErrPending if the job runner
+// did not start yet. ErrRunning if picked but still being processed.
+// ErrNotImplemented is returned if the tracking feature was not enabled.
 func (q *Queue) Result(ctx context.Context, id int64) error {
 	return q.resultFn(ctx, id)
 }
 
+// result is the internal function invoked to fetch a given job execution result
+// based on its id if this feature was enabled during the Queue initialization.
 func (q *Queue) result(ctx context.Context, id int64) error {
 	v, found := q.records.LoadAndDelete(id)
 	if !found {

@@ -7,12 +7,13 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // New creates an instance of a workable Queue.
 func New(flags Flag, size, tracks int) *Queue {
 	q := &Queue{
-		jobsChan: make(chan Jobber),
+		jobsChan: make(chan Jobber, 1),
 		records:  sync.Map{},
 		size:     size,
 	}
@@ -112,22 +113,31 @@ func (q *Queue) asyncStart(ctx context.Context) error {
 }
 
 // Push is a non-blocking method that adds job to the queue for processing.
-// If the queue is closed, it should retry until the Queue is closed or
-// the context is done. If added, this means the job result was recorded
-// with the initial value `ErrPending` and it returns the associated job id.
+// It allows a maximum of 1ms to enqueue a job. On success, it returns the
+// unique job id (int64) and nil as error. Then records into the cache an
+// initial state of the job result as `ErrPending`.
+// If the queue service is stopped, it returns `ErrQueueClosed`. If the queue
+// is full then it returns `ErrQueueBusy`. In case the context is done or fail
+// to enqueue the job, the job id is would not be present into the results cache.
 func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
-	for {
-		select {
-		case <-ctx.Done():
-			return -1, ctx.Err()
-		default:
-			if !q.stopped.Load() {
-				id := q.counter.Add(1)
-				q.recordFn(id, ErrPending)
-				q.jobsChan <- &Job{id, r}
-				return id, nil
-			}
-		}
+	if q.stopped.Load() {
+		return -1, ErrQueueClosed
+	}
+
+	id := q.counter.Add(1)
+	if q.mode == MODE_SYNC {
+		q.recordFn(id, ErrPending)
+	}
+
+	select {
+	case <-ctx.Done():
+		q.records.Delete(id)
+		return -1, ctx.Err()
+	case q.jobsChan <- &Job{id, r}:
+		return id, nil
+	case <-time.After(1 * time.Millisecond):
+		q.records.Delete(id)
+		return -1, ErrQueueBusy
 	}
 }
 

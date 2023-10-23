@@ -7,6 +7,8 @@ var (
 	ErrRunning        = errors.New("still running")
 	ErrNotFound       = errors.New("not found")
 	ErrInvalid        = errors.New("found non error result")
+	ErrQueueClosed    = errors.New("queue is closed")
+	ErrQueueBusy      = errors.New("queue is busy")
 	ErrNotImplemented = errors.New("feature not enabled. add TRACK_JOBS flag when creating the queue")
 )
 

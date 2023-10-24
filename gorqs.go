@@ -13,7 +13,7 @@ import (
 // New creates an instance of a workable Queue.
 func New(flags Flag, maxtracks int) *Queue {
 	q := &Queue{
-		jobsChan: make(chan Jobber, 1),
+		jobsChan: make(chan jobber, 1),
 		records:  sync.Map{},
 	}
 
@@ -65,8 +65,8 @@ func (q *Queue) sconsumer(ctx context.Context, iq *slist) {
 				continue
 			}
 			if job := iq.pop(); job != nil {
-				q.recordFn(job.GetID(), ErrRunning)
-				q.recordFn(job.GetID(), job.Run())
+				q.recordFn(job.getID(), ErrRunning)
+				q.recordFn(job.getID(), job.Run())
 			}
 		}
 	}
@@ -101,8 +101,8 @@ func (q *Queue) astart(ctx context.Context) error {
 		select {
 		case j := <-q.jobsChan:
 			go func() {
-				q.recordFn(j.GetID(), ErrRunning)
-				q.recordFn(j.GetID(), j.Run())
+				q.recordFn(j.getID(), ErrRunning)
+				q.recordFn(j.getID(), j.Run())
 			}()
 		case <-ctx.Done():
 			return ctx.Err()
@@ -135,7 +135,7 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 	case <-ctx.Done():
 		q.records.Delete(id)
 		return -1, ctx.Err()
-	case q.jobsChan <- &Job{id, r}:
+	case q.jobsChan <- &job{id, r}:
 		return id, nil
 	case <-time.After(10 * time.Millisecond):
 		q.records.Delete(id)

@@ -3,6 +3,7 @@ package gorqs
 import "errors"
 
 var (
+	// Operations errors
 	ErrPending        = errors.New("pending into queue")
 	ErrRunning        = errors.New("still running")
 	ErrNotFound       = errors.New("not found")
@@ -12,24 +13,29 @@ var (
 	ErrNotImplemented = errors.New("feature not enabled. add TRACK_JOBS flag when creating the queue")
 )
 
+// Runner represents a runnable job expected by the queue service.
 type Runner interface {
 	Run() error
 }
 
-type Jobber interface {
-	GetID() int64
+// jobber defines expected real job behaviors.
+type jobber interface {
+	getID() int64
 	Runner
 }
 
-type Job struct {
+// job represents the concrete item that will be pushed and processed the by the queue service.
+type job struct {
 	id int64
 	r  Runner
 }
 
-func (j *Job) GetID() int64 {
+// getID returns a given job unique id.
+func (j *job) getID() int64 {
 	return j.id
 }
 
-func (j *Job) Run() error {
+// Run implements the Run method of Runner interface.
+func (j *job) Run() error {
 	return j.r.Run()
 }

@@ -7,7 +7,7 @@ import (
 
 // node is an element of a synchronized singly linked list (slist).
 type node struct {
-	job  Jobber
+	job  jobber
 	next *node
 }
 
@@ -32,7 +32,7 @@ func (sl *slist) isEmpty() bool {
 }
 
 // push adds a job to the queue.
-func (sl *slist) push(j Jobber) {
+func (sl *slist) push(j jobber) {
 	sl.mu.Lock()
 	node := &node{
 		job:  j,
@@ -56,7 +56,7 @@ func (sl *slist) push(j Jobber) {
 }
 
 // pop returns the oldest job from the queue.
-func (sl *slist) pop() Jobber {
+func (sl *slist) pop() jobber {
 	sl.mu.Lock()
 	if sl.head == nil {
 		sl.mu.Unlock()

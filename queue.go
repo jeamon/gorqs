@@ -48,7 +48,7 @@ type Queuer interface {
 
 // Queue implements the Queuer interface. Use the package `New` method to get an instance.
 type Queue struct {
-	jobsChan chan Jobber
+	jobsChan chan jobber
 	records  sync.Map
 	stopped  atomic.Bool
 	mode     Flag

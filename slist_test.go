@@ -10,7 +10,7 @@ func (f *fakeJobber) Run() error {
 	return nil
 }
 
-func (f *fakeJobber) GetID() int64 {
+func (f *fakeJobber) getID() int64 {
 	return -1
 }
 

@@ -4,14 +4,14 @@ import "errors"
 
 var (
 	// Predefined errors
-	ErrPending        = errors.New("pending into queue")
-	ErrRunning        = errors.New("still running")
-	ErrNotFound       = errors.New("not found")
-	ErrInvalid        = errors.New("found non error result")
-	ErrQueueClosed    = errors.New("queue is closed")
-	ErrQueueBusy      = errors.New("queue is busy")
-	ErrUnknownMode    = errors.New("unknown queue mode flag")
-	ErrNotImplemented = errors.New("feature not enabled. add TRACK_JOBS flag when creating the queue")
+	ErrPending        = errors.New("gorqs: pending into queue")
+	ErrRunning        = errors.New("gorqs: job still running")
+	ErrNotFound       = errors.New("gorqs: job not found")
+	ErrInvalid        = errors.New("gorqs: found non error result")
+	ErrQueueClosed    = errors.New("gorqs: queue is closed")
+	ErrQueueBusy      = errors.New("gorqs: queue is busy so retry")
+	ErrUnknownMode    = errors.New("gorqs: unknown queue mode flag")
+	ErrNotImplemented = errors.New("gorqs: feature not enabled. add TRACK_JOBS flag when creating the queue")
 )
 
 // Runner represents a runnable job expected by the queue service.

@@ -52,7 +52,6 @@ type Queue struct {
 	records  sync.Map
 	stopped  atomic.Bool
 	mode     Flag
-	size     int
 	counter  atomic.Int64
 	recordFn func(id int64, err error)
 	resultFn func(ctx context.Context, id int64) error

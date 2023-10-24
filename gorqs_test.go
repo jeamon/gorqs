@@ -204,11 +204,11 @@ func (b basicTestJob) Run() error {
 }
 
 func initializeSyncQueue() Queuer {
-	return New(MODE_SYNC, 3, 0)
+	return New(MODE_SYNC, 0)
 }
 
 func initializeAsyncQueue() Queuer {
-	return New(MODE_ASYNC, 0, 0)
+	return New(MODE_ASYNC, 0)
 }
 
 func check(t *testing.T, expect int, id int64, err error) {

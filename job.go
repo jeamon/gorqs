@@ -3,13 +3,14 @@ package gorqs
 import "errors"
 
 var (
-	// Operations errors
+	// Predefined errors
 	ErrPending        = errors.New("pending into queue")
 	ErrRunning        = errors.New("still running")
 	ErrNotFound       = errors.New("not found")
 	ErrInvalid        = errors.New("found non error result")
 	ErrQueueClosed    = errors.New("queue is closed")
 	ErrQueueBusy      = errors.New("queue is busy")
+	ErrUnknownMode    = errors.New("unknown queue mode flag")
 	ErrNotImplemented = errors.New("feature not enabled. add TRACK_JOBS flag when creating the queue")
 )
 

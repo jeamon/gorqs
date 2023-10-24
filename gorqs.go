@@ -5,7 +5,6 @@ package gorqs
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -46,7 +45,7 @@ func (q *Queue) Start(ctx context.Context) error {
 	case MODE_ASYNC:
 		return q.astart(ctx)
 	default:
-		return fmt.Errorf("invalid mode")
+		return ErrUnknownMode
 	}
 }
 

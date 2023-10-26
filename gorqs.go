@@ -186,7 +186,9 @@ func (q *Queue) result(ctx context.Context, id int64) error {
 	if !found {
 		return ErrNotFound
 	}
-
+	if v == nil {
+		return nil
+	}
 	err, found := v.(error)
 	if !found {
 		return ErrInvalid

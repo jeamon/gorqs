@@ -32,6 +32,8 @@ func TestSyncQueue_Basic(t *testing.T) {
 		})
 	}
 
+	waitQueue(t, queue)
+
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -81,6 +83,7 @@ func TestAsyncQueue_Basic(t *testing.T) {
 		})
 	}
 
+	waitQueue(t, queue)
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -128,6 +131,7 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 		})
 	}
 
+	waitQueue(t, queue)
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -176,7 +180,7 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 			return nil
 		})
 	}
-
+	waitQueue(t, queue)
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -215,4 +219,11 @@ func check(t *testing.T, expect int, id int64, err error) {
 	t.Helper()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(expect), id)
+}
+
+func waitQueue(t *testing.T, queue Queuer) {
+	t.Helper()
+	for !queue.IsRunning() {
+		time.Sleep(1 * time.Microsecond)
+	}
 }

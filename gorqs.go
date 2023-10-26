@@ -57,7 +57,7 @@ func (q *Queue) sconsumer(ctx context.Context, iq *slist) {
 		case <-ctx.Done():
 			return
 		default:
-			if q.stopped.Load() {
+			if !q.running.Load() {
 				return
 			}
 			if iq.isEmpty() {
@@ -75,17 +75,19 @@ func (q *Queue) sconsumer(ctx context.Context, iq *slist) {
 // onto an internal synchronized singly linked list named iq. This ensure that
 // one job is processed at a time and jobs are processed in order of reception.
 func (q *Queue) sstart(ctx context.Context) error {
+	q.running.Store(true)
 	iq := list()
 	go q.sconsumer(ctx, iq)
 
 	for {
 		select {
 		case <-ctx.Done():
+			q.running.Store(false)
 			return ctx.Err()
 		case job := <-q.jobsChan:
 			iq.push(job)
 		default:
-			if q.stopped.Load() {
+			if !q.running.Load() {
 				return nil
 			}
 		}
@@ -96,6 +98,7 @@ func (q *Queue) sstart(ctx context.Context) error {
 // It returns once the Queue is stopped or the context is done.
 // Each job returned error result is stored into the records map.
 func (q *Queue) astart(ctx context.Context) error {
+	q.running.Store(true)
 	for {
 		select {
 		case j := <-q.jobsChan:
@@ -104,9 +107,10 @@ func (q *Queue) astart(ctx context.Context) error {
 				q.recordFn(j.getID(), j.Run())
 			}()
 		case <-ctx.Done():
+			q.running.Store(false)
 			return ctx.Err()
 		default:
-			if q.stopped.Load() {
+			if !q.running.Load() {
 				return nil
 			}
 		}
@@ -121,7 +125,7 @@ func (q *Queue) astart(ctx context.Context) error {
 // the the job is not enqueued it returns ErrQueueBusy. In case the context
 // is done or fail to enqueue the job, it ensures the job id is not cached.
 func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
-	if q.stopped.Load() {
+	if !q.running.Load() {
 		return -1, ErrQueueClosed
 	}
 
@@ -148,18 +152,22 @@ func (q *Queue) Stop(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
-		q.stopped.Store(true)
-		close(q.jobsChan)
+		q.running.Store(false)
 		return nil
 	}
 }
 
-// Clear removes all records from the map.
+// Clear removes all recorded job results from the cache.
 func (q *Queue) Clear() {
 	q.records.Range(func(key interface{}, value interface{}) bool {
 		q.records.Delete(key)
 		return true
 	})
+}
+
+// IsRunning returns the current status of the queue service.
+func (q *Queue) IsRunning() bool {
+	return q.running.Load()
 }
 
 // Result provides the result `error` of a given Job Runner based on its ID.

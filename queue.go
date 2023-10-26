@@ -48,11 +48,11 @@ type Queuer interface {
 
 // Queue implements the Queuer interface. Use the package `New` method to get an instance.
 type Queue struct {
-	jobsChan chan jobber
-	records  sync.Map
-	stopped  atomic.Bool
-	mode     Flag
-	counter  atomic.Int64
-	recordFn func(id int64, err error)
-	resultFn func(ctx context.Context, id int64) error
+	jobsChan chan jobber                               // queue of all jobs to be processed
+	records  sync.Map                                  // cache of all executed jobs results (error type)
+	mode     Flag                                      // sync or async mode into which the queue is running
+	stopped  atomic.Bool                               // defines wether the queue service is running or not
+	counter  atomic.Int64                              // number of job queued and used to generate ids
+	recordFn func(id int64, err error)                 // callback function to cache jobs execution result
+	resultFn func(ctx context.Context, id int64) error // callback function to provi
 }

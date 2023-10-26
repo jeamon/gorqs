@@ -10,7 +10,7 @@ import (
 )
 
 // New creates an instance of a workable Queue.
-func New(flags Flag, maxtracks int) *Queue {
+func New(flags Flag) *Queue {
 	q := &Queue{
 		jobsChan: make(chan jobber, 1),
 		records:  sync.Map{},

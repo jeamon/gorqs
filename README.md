@@ -12,7 +12,7 @@ The mode defines wether each added job should be processed *synchronously* or *a
 | Start(context.Context) error | starts the jobs queue |
 | Stop(context.Context) error | stops the jobs queue |
 | Push(context.Context, Runner) (int64, error) | adds a job to the queue asynchronously |
-| Result(context.Context, int64) error | gets result execution of given job |
+| Fetch(context.Context, int64) error | gets result execution of given job |
 | Clear | delete all jobs results records |
 
 *An acceptable runnable job should implement the `Runner` interface defined as below :*

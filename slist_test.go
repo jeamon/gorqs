@@ -19,7 +19,7 @@ func TestSyncList_IsEmpty(t *testing.T) {
 		l := list()
 		yes := l.isEmpty()
 		if !yes {
-			t.Errorf("initialized slist should be empty")
+			t.Error("initialized slist should be empty")
 		}
 	})
 
@@ -28,7 +28,7 @@ func TestSyncList_IsEmpty(t *testing.T) {
 		l.push(&fakeJobber{})
 		yes := l.isEmpty()
 		if yes {
-			t.Errorf("slist contains one item. should not be empty")
+			t.Error("slist contains one item. should not be empty")
 		}
 	})
 }

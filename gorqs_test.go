@@ -3,11 +3,10 @@ package gorqs
 import (
 	"context"
 	"errors"
-	"log"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // Ensure concrete type Queue satisfies Queuer interface.
@@ -78,21 +77,21 @@ func TestQueue_Result(t *testing.T) {
 // Ensure all jobs added are queued and executed in the order they were added.
 func TestSyncQueue_Basic(t *testing.T) {
 	queue := initializeSyncQueue()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
 	done := make(chan struct{}, 1)
 	go func() {
-		err := queue.Start(ctx)
-		assert.NoError(t, err)
+		if err := queue.Start(ctx); err != nil {
+			t.Errorf("expected no error but got %v", err)
+		}
 		done <- struct{}{}
 	}()
 
 	results := make([]string, 0, 3)
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
-			time.Sleep(time.Second)
-			log.Printf("Finished -> %s", id)
+			time.Sleep(10 * time.Millisecond)
 			results = append(results, id)
 			return nil
 		})
@@ -107,23 +106,27 @@ func TestSyncQueue_Basic(t *testing.T) {
 	id, err = queue.Push(ctx, makeJob("job3"))
 	check(t, 3, id, err)
 
-	time.Sleep(time.Second * 4)
+	// give more time for above josb to finish.
+	time.Sleep(60 * time.Millisecond)
 
-	err = queue.Stop(ctx)
-	assert.NoError(t, err)
+	if err := queue.Stop(ctx); err != nil {
+		t.Errorf("expected <nil> but got %v", err)
+	}
 
 	select {
 	case <-done:
-	case <-time.After(2 * time.Second):
-		t.Error("Started queue did not exit.")
+	case <-time.After(20 * time.Millisecond):
+		t.Error("running queue did not exit.")
 	}
 
-	if !assert.Len(t, results, 3) {
+	if lg := len(results); lg != 3 {
+		t.Fatalf("invalid results length. expected 3 but got %d", lg)
 		return
 	}
-	assert.Equal(t, "job1", results[0])
-	assert.Equal(t, "job2", results[1])
-	assert.Equal(t, "job3", results[2])
+
+	if equal := reflect.DeepEqual([]string{"job1", "job2", "job3"}, results); !equal {
+		t.Errorf("expected %v but got %v", []string{"job1", "job2", "job3"}, results)
+	}
 }
 
 // Ensure all jobs added are queued and executed in the order they were added.
@@ -132,7 +135,9 @@ func TestSyncQueue_Result(t *testing.T) {
 	ctx := context.Background()
 	go func() {
 		err := queue.Start(ctx)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Errorf("expected no error but got %v", err)
+		}
 	}()
 
 	makeJob := func(id string) Runner {
@@ -152,15 +157,21 @@ func TestSyncQueue_Result(t *testing.T) {
 	check(t, 3, id, err)
 
 	time.Sleep(100 * time.Millisecond)
-	err = queue.Stop(ctx)
-	assert.NoError(t, err)
+	if err := queue.Stop(ctx); err != nil {
+		t.Errorf("expected no error but got %v", err)
+	}
 
-	r := queue.Result(context.Background(), 1)
-	assert.Nil(t, r)
-	r = queue.Result(context.Background(), 2)
-	assert.Equal(t, nil, r)
-	r = queue.Result(context.Background(), 3)
-	assert.Nil(t, r)
+	if r := queue.Result(context.Background(), 1); r != nil {
+		t.Errorf("expected <nil> but got %v", r)
+	}
+
+	if r := queue.Result(context.Background(), 2); r != nil {
+		t.Errorf("expected <nil> but got %v", r)
+	}
+
+	if r := queue.Result(context.Background(), 3); r != nil {
+		t.Errorf("expected <nil> but got %v", r)
+	}
 }
 
 // Ensure all jobs pushed are immediately handled and executed concurrently.
@@ -172,7 +183,9 @@ func TestAsyncQueue_Basic(t *testing.T) {
 	done := make(chan struct{}, 1)
 	go func() {
 		err := queue.Start(ctx)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Errorf("expected no error but got %v", err)
+		}
 		done <- struct{}{}
 	}()
 
@@ -180,7 +193,6 @@ func TestAsyncQueue_Basic(t *testing.T) {
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(time.Second)
-			log.Printf("Finished -> %s", id)
 			results = append(results, id)
 			return nil
 		})
@@ -196,19 +208,28 @@ func TestAsyncQueue_Basic(t *testing.T) {
 
 	time.Sleep(1500 * time.Millisecond)
 
-	err = queue.Stop(ctx)
-	assert.NoError(t, err)
+	if err := queue.Stop(ctx); err != nil {
+		t.Errorf("expected no error but got %v", err)
+	}
 
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):
-		t.Error("Started queue did not exit.")
+		t.Error("running queue did not exit.")
 	}
 
-	if !assert.Len(t, results, 3) {
+	if lg := len(results); lg != 3 {
+		t.Fatalf("invalid results length. expected 3 but got %d", lg)
 		return
 	}
-	assert.ElementsMatch(t, []string{"job1", "job2", "job3"}, results)
+	expect := []string{"job1", "job2", "job3"}
+	resultsStr := strings.Join(results, " ")
+	for _, e := range expect {
+		if !strings.Contains(resultsStr, e) {
+			t.Errorf("expected %v but got %v", expect, results)
+			return
+		}
+	}
 }
 
 // Ensure pending job into the internal queue will not be executed once the Queue is stopped.
@@ -220,7 +241,9 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 	done := make(chan struct{}, 1)
 	go func() {
 		err := queue.Start(ctx)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Errorf("expected no error but got %v", err)
+		}
 		done <- struct{}{}
 	}()
 
@@ -228,7 +251,6 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(time.Second)
-			log.Printf("Finished -> %s", id)
 			results = append(results, id)
 			return nil
 		})
@@ -244,20 +266,27 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 
 	time.Sleep(2500 * time.Millisecond)
 
-	err = queue.Stop(ctx)
-	assert.NoError(t, err)
+	if err := queue.Stop(ctx); err != nil {
+		t.Errorf("expected no error but got %v", err)
+	}
 
 	select {
 	case <-done:
 	case <-time.After(2 * time.Second):
-		t.Error("Started queue did not exit.")
+		t.Error("running queue did not exit.")
 	}
 
-	if !assert.Len(t, results, 2) {
+	if lg := len(results); lg != 2 {
+		t.Fatalf("invalid results length. expected 2 but got %d", lg)
 		return
 	}
-	assert.Equal(t, "job1", results[0])
-	assert.Equal(t, "job2", results[1])
+
+	if results[0] != "job1" {
+		t.Errorf("expected %q but got %s", "job1", results[0])
+	}
+	if results[1] != "job2" {
+		t.Errorf("expected %q but got %s", "job2", results[1])
+	}
 }
 
 // Ensure pending job into the internal queue will not be executed once the Queue max uptime reached.
@@ -269,8 +298,9 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 	done := make(chan struct{}, 1)
 	go func() {
 		err := queue.Start(ctx)
-		assert.Error(t, err)
-		assert.EqualError(t, err, context.DeadlineExceeded.Error())
+		if err != context.DeadlineExceeded {
+			t.Errorf("expected error %v but got %v", context.DeadlineExceeded, err)
+		}
 		done <- struct{}{}
 	}()
 
@@ -278,7 +308,6 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(time.Second)
-			log.Printf("Finished -> %s", id)
 			results = append(results, id)
 			return nil
 		})
@@ -294,14 +323,19 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 	select {
 	case <-done:
 	case <-time.After(3 * time.Second):
-		t.Error("Started queue did not exit.")
+		t.Error("running queue did not exit.")
 	}
 
-	if !assert.Len(t, results, 2) {
+	if lg := len(results); lg != 2 {
+		t.Fatalf("invalid results. expected 2 items but got %d", lg)
 		return
 	}
-	assert.Equal(t, "job1", results[0])
-	assert.Equal(t, "job2", results[1])
+	if results[0] != "job1" {
+		t.Errorf("expected %q but got %s", "job1", results[0])
+	}
+	if results[1] != "job2" {
+		t.Errorf("expected %q but got %s", "job2", results[1])
+	}
 }
 
 type basicTestJob func() error
@@ -318,10 +352,16 @@ func initializeAsyncQueue() Queuer {
 	return New(MODE_ASYNC)
 }
 
-func check(t *testing.T, expect int, id int64, err error) {
+// check verifies if err is nil and if id equals expect.
+func check(t *testing.T, expect int64, id int64, err error) {
 	t.Helper()
-	assert.NoError(t, err)
-	assert.Equal(t, int64(expect), id)
+	if err != nil {
+		t.Errorf("expected no error but got %v", err)
+	}
+
+	if id != expect {
+		t.Errorf("expected %d but got %d", expect, id)
+	}
 }
 
 func waitQueue(t *testing.T, queue Queuer) {

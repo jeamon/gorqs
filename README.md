@@ -5,7 +5,7 @@ The mode defines wether each added job should be processed *synchronously* or *a
 
 ## Features
 
-`gorqs.New(gorqs.MODE_SYNC | gorqs.TRACK_JOBS)` or `gorqs.New(gorqs.MODE_ASYNC | gorqs.TRACK_JOBS)` method provides a Queue object which implements the `Queuer` interface with below actions.
+`gorqs.New(gorqs.SyncMode | gorqs.TrackJobs)` or `gorqs.New(gorqs.AsyncMode | gorqs.TrackJobs)` method provides a Queue object which implements the `Queuer` interface with below actions.
 
 | Action | Description |
 |:------ | :-------------------------------------- |

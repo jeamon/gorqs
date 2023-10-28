@@ -23,15 +23,15 @@ func New(flags Flag) *Queue {
 	}
 
 	if flags&TrackJobs != 0 {
-		q.recordFn = func(id int64, err error) {
+		q.recorder = func(id int64, err error) {
 			q.records.Store(id, err)
 		}
-		q.resultFn = func(ctx context.Context, id int64) error {
-			return q.result(ctx, id)
+		q.fetcher = func(ctx context.Context, id int64) error {
+			return q.fetch(ctx, id)
 		}
 	} else {
-		q.recordFn = func(id int64, err error) {}
-		q.resultFn = func(ctx context.Context, id int64) error { return ErrNotImplemented }
+		q.recorder = func(id int64, err error) {}
+		q.fetcher = func(ctx context.Context, id int64) error { return ErrNotImplemented }
 	}
 	return q
 }
@@ -66,8 +66,8 @@ func (q *Queue) sconsumer(ctx context.Context, iq *slist) {
 				continue
 			}
 			if job := iq.pop(); job != nil {
-				q.recordFn(job.getID(), ErrRunning)
-				q.recordFn(job.getID(), job.Run())
+				q.recorder(job.getID(), ErrRunning)
+				q.recorder(job.getID(), job.Run())
 			}
 		}
 	}
@@ -105,8 +105,8 @@ func (q *Queue) astart(ctx context.Context) error {
 		select {
 		case j := <-q.jobsChan:
 			go func() {
-				q.recordFn(j.getID(), ErrRunning)
-				q.recordFn(j.getID(), j.Run())
+				q.recorder(j.getID(), ErrRunning)
+				q.recorder(j.getID(), j.Run())
 			}()
 		case <-ctx.Done():
 			q.running.Store(false)
@@ -133,7 +133,7 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 
 	id := q.counter.Add(1)
 	if q.mode == SyncMode {
-		q.recordFn(id, ErrPending)
+		q.recorder(id, ErrPending)
 	}
 
 	select {
@@ -172,18 +172,18 @@ func (q *Queue) IsRunning() bool {
 	return q.running.Load()
 }
 
-// Result provides the result `error` of a given Job Runner based on its ID.
+// Fetch provides the result `error` of a given Job Runner based on its ID.
 // If the job id was found, it delete the record from the map. It returns
 // ErrNotFound if the `id` does not exist or ErrPending if the job runner
 // did not start yet. ErrRunning if picked but still being processed.
 // ErrNotImplemented is returned if the tracking feature was not enabled.
-func (q *Queue) Result(ctx context.Context, id int64) error {
-	return q.resultFn(ctx, id)
+func (q *Queue) Fetch(ctx context.Context, id int64) error {
+	return q.fetcher(ctx, id)
 }
 
-// result is the internal function invoked to fetch a given job execution result
+// fetch is the internal function invoked to retrieve a given job execution result
 // based on its id if this feature was enabled during the Queue initialization.
-func (q *Queue) result(_ context.Context, id int64) error {
+func (q *Queue) fetch(_ context.Context, id int64) error {
 	v, found := q.records.LoadAndDelete(id)
 	if !found {
 		return ErrNotFound

@@ -33,11 +33,11 @@ type Queuer interface {
 	// will not be picked for execution.
 	Stop(ctx context.Context) error
 
-	// Result provides the cached result of a Runner associated to a given job id.
+	// Fetch provides the cached result of a Runner associated to a given job id.
 	// ErrNotFound is returned if the job `id` does not exist. ErrPending if the
 	// job runner did not start yet. ErrRunning if picked but still being running.
 	// If the job `error` result is fetched, the entry is removed from the cache.
-	Result(ctx context.Context, id int64) error
+	Fetch(ctx context.Context, id int64) error
 
 	// Clear removes all executed jobs results from the records cache.
 	Clear()
@@ -53,6 +53,6 @@ type Queue struct {
 	mode     Flag                                      // sync or async mode into which the queue is running
 	running  atomic.Bool                               // defines wether the queue service is running or not
 	counter  atomic.Int64                              // number of job queued and used to generate ids
-	recordFn func(id int64, err error)                 // callback function to cache jobs execution result
-	resultFn func(ctx context.Context, id int64) error // callback function to provi
+	recorder func(id int64, err error)                 // callback function to cache jobs execution result
+	fetcher  func(ctx context.Context, id int64) error // callback function to retrieve job execution result
 }

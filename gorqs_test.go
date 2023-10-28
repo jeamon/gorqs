@@ -39,7 +39,7 @@ func TestQueue_Result(t *testing.T) {
 	id := int64(1)
 	t.Run("no found", func(t *testing.T) {
 		q := New(SyncMode | TrackJobs)
-		err := q.Result(context.Background(), id)
+		err := q.Fetch(context.Background(), id)
 		if err != ErrNotFound {
 			t.Fatalf("expect ErrNotFound but got %v", err)
 		}
@@ -48,7 +48,7 @@ func TestQueue_Result(t *testing.T) {
 	t.Run("nil", func(t *testing.T) {
 		q := New(SyncMode | TrackJobs)
 		q.records.Store(id, nil)
-		r := q.Result(context.Background(), id)
+		r := q.Fetch(context.Background(), id)
 		if r != nil {
 			t.Fatalf("expect <nil> but got %v", r)
 		}
@@ -57,7 +57,7 @@ func TestQueue_Result(t *testing.T) {
 	t.Run("invalid", func(t *testing.T) {
 		q := New(SyncMode | TrackJobs)
 		q.records.Store(id, "no error type")
-		err := q.Result(context.Background(), id)
+		err := q.Fetch(context.Background(), id)
 		if err != ErrInvalid {
 			t.Fatalf("expect ErrInvalid but got %v", err)
 		}
@@ -67,7 +67,7 @@ func TestQueue_Result(t *testing.T) {
 		err := errors.New("job execution error")
 		qq := New(SyncMode | TrackJobs)
 		qq.records.Store(id, err)
-		result := qq.Result(context.Background(), id)
+		result := qq.Fetch(context.Background(), id)
 		if result != err {
 			t.Fatalf("expect %v but got %v", err, result)
 		}
@@ -107,7 +107,7 @@ func TestSyncQueue_Basic(t *testing.T) {
 	check(t, 3, id, err)
 
 	// give more time for above josb to finish.
-	time.Sleep(60 * time.Millisecond)
+	time.Sleep(70 * time.Millisecond)
 
 	if err := queue.Stop(ctx); err != nil {
 		t.Errorf("expected <nil> but got %v", err)
@@ -161,15 +161,15 @@ func TestSyncQueue_Result(t *testing.T) {
 		t.Errorf("expected no error but got %v", err)
 	}
 
-	if r := queue.Result(context.Background(), 1); r != nil {
+	if r := queue.Fetch(context.Background(), 1); r != nil {
 		t.Errorf("expected <nil> but got %v", r)
 	}
 
-	if r := queue.Result(context.Background(), 2); r != nil {
+	if r := queue.Fetch(context.Background(), 2); r != nil {
 		t.Errorf("expected <nil> but got %v", r)
 	}
 
-	if r := queue.Result(context.Background(), 3); r != nil {
+	if r := queue.Fetch(context.Background(), 3); r != nil {
 		t.Errorf("expected <nil> but got %v", r)
 	}
 }

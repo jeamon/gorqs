@@ -1,0 +1,76 @@
+run:
+  # Timeout for analysis.
+  # Default: 1m
+  timeout: 3m
+
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 10
+  maligned:
+    suggest-new: true
+  goimports:
+    local-prefixes: github.com/golangci/golangci-lint
+  errcheck:
+    # Checking of errors in type assertions: `a := b.(MyStruct)`. Default: false.
+    check-type-assertions: true
+  funlen:
+    # Checks the number of lines in a function. Default: 60.
+    lines: 100
+    # Checks the number of statements in a function. Default: 40.
+    statements: 50
+
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - gocritic
+    - gofumpt
+    - goimports
+    - revive
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - exportloopref
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+
+issues:
+  # Maximum count of issues with the same text. Default: 3.
+  max-same-issues: 3
+
+  exclude-rules:
+    - source: "(noinspection|TODO)"
+      linters: [ godot ]
+     # Allow reuse of string literals and globals in test files.
+    - path: _test.go
+      linters:
+        - gochecknoglobals
+        - goconst
+    # Exclude the funlen linter for tests.
+    - linters:
+      - funlen
+      source: "^func Test"

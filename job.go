@@ -11,7 +11,8 @@ var (
 	ErrQueueClosed    = errors.New("gorqs: queue is closed")
 	ErrQueueBusy      = errors.New("gorqs: queue is busy so retry")
 	ErrUnknownMode    = errors.New("gorqs: unknown queue mode flag")
-	ErrNotImplemented = errors.New("gorqs: feature not enabled. add TRACK_JOBS flag when creating the queue")
+	ErrInvalidMode    = errors.New("gorqs: invalid queue mode flag")
+	ErrNotImplemented = errors.New("gorqs: feature not enabled. add TrackJobs flag when creating the queue")
 )
 
 // Runner represents a runnable job expected by the queue service.

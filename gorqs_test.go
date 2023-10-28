@@ -38,7 +38,7 @@ func TestQueue_Clear(t *testing.T) {
 func TestQueue_Result(t *testing.T) {
 	id := int64(1)
 	t.Run("no found", func(t *testing.T) {
-		q := New(MODE_SYNC | TRACK_JOBS)
+		q := New(SyncMode | TrackJobs)
 		err := q.Result(context.Background(), id)
 		if err != ErrNotFound {
 			t.Fatalf("expect ErrNotFound but got %v", err)
@@ -46,7 +46,7 @@ func TestQueue_Result(t *testing.T) {
 	})
 
 	t.Run("nil", func(t *testing.T) {
-		q := New(MODE_SYNC | TRACK_JOBS)
+		q := New(SyncMode | TrackJobs)
 		q.records.Store(id, nil)
 		r := q.Result(context.Background(), id)
 		if r != nil {
@@ -55,7 +55,7 @@ func TestQueue_Result(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		q := New(MODE_SYNC | TRACK_JOBS)
+		q := New(SyncMode | TrackJobs)
 		q.records.Store(id, "no error type")
 		err := q.Result(context.Background(), id)
 		if err != ErrInvalid {
@@ -65,7 +65,7 @@ func TestQueue_Result(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		err := errors.New("job execution error")
-		qq := New(MODE_SYNC | TRACK_JOBS)
+		qq := New(SyncMode | TrackJobs)
 		qq.records.Store(id, err)
 		result := qq.Result(context.Background(), id)
 		if result != err {
@@ -131,7 +131,7 @@ func TestSyncQueue_Basic(t *testing.T) {
 
 // Ensure all jobs added are queued and executed in the order they were added.
 func TestSyncQueue_Result(t *testing.T) {
-	queue := New(MODE_SYNC | TRACK_JOBS)
+	queue := New(SyncMode | TrackJobs)
 	ctx := context.Background()
 	go func() {
 		err := queue.Start(ctx)
@@ -345,11 +345,11 @@ func (b basicTestJob) Run() error {
 }
 
 func initializeSyncQueue() Queuer {
-	return New(MODE_SYNC)
+	return New(SyncMode)
 }
 
 func initializeAsyncQueue() Queuer {
-	return New(MODE_ASYNC)
+	return New(AsyncMode)
 }
 
 // check verifies if err is nil and if id equals expect.

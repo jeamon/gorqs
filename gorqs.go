@@ -16,13 +16,13 @@ func New(flags Flag) *Queue {
 		records:  sync.Map{},
 	}
 
-	if flags&MODE_ASYNC != 0 {
-		q.mode = MODE_ASYNC
+	if flags&AsyncMode != 0 {
+		q.mode = AsyncMode
 	} else {
-		q.mode = MODE_SYNC
+		q.mode = SyncMode
 	}
 
-	if flags&TRACK_JOBS != 0 {
+	if flags&TrackJobs != 0 {
 		q.recordFn = func(id int64, err error) {
 			q.records.Store(id, err)
 		}
@@ -40,10 +40,12 @@ func New(flags Flag) *Queue {
 // It returns once the context is cancelled.
 func (q *Queue) Start(ctx context.Context) error {
 	switch q.mode {
-	case MODE_SYNC:
+	case SyncMode:
 		return q.sstart(ctx)
-	case MODE_ASYNC:
+	case AsyncMode:
 		return q.astart(ctx)
+	case TrackJobs:
+		return ErrInvalidMode
 	default:
 		return ErrUnknownMode
 	}
@@ -130,7 +132,7 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 	}
 
 	id := q.counter.Add(1)
-	if q.mode == MODE_SYNC {
+	if q.mode == SyncMode {
 		q.recordFn(id, ErrPending)
 	}
 
@@ -181,7 +183,7 @@ func (q *Queue) Result(ctx context.Context, id int64) error {
 
 // result is the internal function invoked to fetch a given job execution result
 // based on its id if this feature was enabled during the Queue initialization.
-func (q *Queue) result(ctx context.Context, id int64) error {
+func (q *Queue) result(_ context.Context, id int64) error {
 	v, found := q.records.LoadAndDelete(id)
 	if !found {
 		return ErrNotFound

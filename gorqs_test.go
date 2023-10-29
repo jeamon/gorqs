@@ -35,7 +35,7 @@ func TestQueue_Clear(t *testing.T) {
 	}
 }
 
-func TestQueue_Result(t *testing.T) {
+func TestQueue_Fetch(t *testing.T) {
 	id := int64(1)
 	t.Run("no found", func(t *testing.T) {
 		q := New(SyncMode | TrackJobs)
@@ -76,7 +76,7 @@ func TestQueue_Result(t *testing.T) {
 
 // Ensure all jobs added are queued and executed in the order they were added.
 func TestSyncQueue_Basic(t *testing.T) {
-	queue := initializeSyncQueue()
+	queue := New(SyncMode)
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
@@ -97,7 +97,7 @@ func TestSyncQueue_Basic(t *testing.T) {
 		})
 	}
 
-	waitQueue(t, queue)
+	waitUntilStarted(t, queue)
 
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
@@ -129,8 +129,8 @@ func TestSyncQueue_Basic(t *testing.T) {
 	}
 }
 
-// Ensure all jobs added are queued and executed in the order they were added.
-func TestSyncQueue_Result(t *testing.T) {
+// Ensure a sync queue service provides exact executed jobs results.
+func TestSyncQueue_Fetch(t *testing.T) {
 	queue := New(SyncMode | TrackJobs)
 	ctx := context.Background()
 	go func() {
@@ -147,7 +147,7 @@ func TestSyncQueue_Result(t *testing.T) {
 		})
 	}
 
-	waitQueue(t, queue)
+	waitUntilStarted(t, queue)
 
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
@@ -176,7 +176,7 @@ func TestSyncQueue_Result(t *testing.T) {
 
 // Ensure all jobs pushed are immediately handled and executed concurrently.
 func TestAsyncQueue_Basic(t *testing.T) {
-	queue := initializeAsyncQueue()
+	queue := New(AsyncMode)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -198,7 +198,7 @@ func TestAsyncQueue_Basic(t *testing.T) {
 		})
 	}
 
-	waitQueue(t, queue)
+	waitUntilStarted(t, queue)
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -234,7 +234,7 @@ func TestAsyncQueue_Basic(t *testing.T) {
 
 // Ensure pending job into the internal queue will not be executed once the Queue is stopped.
 func TestSyncQueue_StopOngoing(t *testing.T) {
-	queue := initializeSyncQueue()
+	queue := New(SyncMode)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -256,7 +256,7 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 		})
 	}
 
-	waitQueue(t, queue)
+	waitUntilStarted(t, queue)
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -291,7 +291,7 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 
 // Ensure pending job into the internal queue will not be executed once the Queue max uptime reached.
 func TestSyncQueue_TimeoutOngoing(t *testing.T) {
-	queue := initializeSyncQueue()
+	queue := New(SyncMode)
 	ctx, cancel := context.WithTimeout(context.Background(), 2500*time.Millisecond)
 	defer cancel()
 
@@ -312,7 +312,7 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 			return nil
 		})
 	}
-	waitQueue(t, queue)
+	waitUntilStarted(t, queue)
 	id, err := queue.Push(ctx, makeJob("job1"))
 	check(t, 1, id, err)
 	id, err = queue.Push(ctx, makeJob("job2"))
@@ -344,14 +344,6 @@ func (b basicTestJob) Run() error {
 	return b()
 }
 
-func initializeSyncQueue() Queuer {
-	return New(SyncMode)
-}
-
-func initializeAsyncQueue() Queuer {
-	return New(AsyncMode)
-}
-
 // check verifies if err is nil and if id equals expect.
 func check(t *testing.T, expect int64, id int64, err error) {
 	t.Helper()
@@ -364,7 +356,7 @@ func check(t *testing.T, expect int64, id int64, err error) {
 	}
 }
 
-func waitQueue(t *testing.T, queue Queuer) {
+func waitUntilStarted(t *testing.T, queue Queuer) {
 	t.Helper()
 	for !queue.IsRunning() {
 		time.Sleep(1 * time.Microsecond)

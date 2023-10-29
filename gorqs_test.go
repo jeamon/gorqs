@@ -26,7 +26,7 @@ func TestJobberInterface(t *testing.T) {
 }
 
 // Ensure calling Clear on queue empty results cache.
-func TestQueue_Clear(t *testing.T) {
+func TestClear(t *testing.T) {
 	q := &Queue{}
 	q.records.Store(1, errors.New("job id 1 execution error"))
 	q.Clear()
@@ -35,11 +35,89 @@ func TestQueue_Clear(t *testing.T) {
 	}
 }
 
-func TestQueue_Fetch(t *testing.T) {
+// Ensure call to Start a queue evaluate passed flag mode.
+func TestStart(t *testing.T) {
+	t.Run("queue: sync mode", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		q := New(SyncMode)
+		errCh := make(chan error)
+		go func() {
+			err := q.Start(ctx)
+			errCh <- err
+		}()
+		cancel()
+		select {
+		case err := <-errCh:
+			if err != context.Canceled {
+				t.Errorf("expected %v but got %v", context.Canceled, err)
+			}
+		case <-time.After(time.Second):
+			t.Error("started sync queue did not exit on context cancellation")
+		}
+	})
+
+	t.Run("queue: async mode", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		q := New(AsyncMode)
+		errCh := make(chan error)
+		go func() {
+			err := q.Start(ctx)
+			errCh <- err
+		}()
+		cancel()
+		select {
+		case err := <-errCh:
+			if err != context.Canceled {
+				t.Errorf("expected %v but got %v", context.Canceled, err)
+			}
+		case <-time.After(time.Second):
+			t.Error("started async queue did not exit on context cancellation")
+		}
+	})
+
+	t.Run("queue: invalid mode", func(t *testing.T) {
+		q := &Queue{}
+		q.mode = TrackJobs
+		errCh := make(chan error)
+		go func() {
+			err := q.Start(context.Background())
+			errCh <- err
+		}()
+		select {
+		case err := <-errCh:
+			if err != ErrInvalidMode {
+				t.Errorf("expected %v but got %v", ErrInvalidMode, err)
+			}
+		case <-time.After(time.Second):
+			t.Error("expected queue to not start but did not failed onstart")
+		}
+	})
+
+	t.Run("queue: unnkown mode", func(t *testing.T) {
+		q := &Queue{}
+		q.mode = Flag(64)
+		errCh := make(chan error)
+		go func() {
+			err := q.Start(context.Background())
+			errCh <- err
+		}()
+		select {
+		case err := <-errCh:
+			if err != ErrUnknownMode {
+				t.Errorf("expected %v but got %v", ErrUnknownMode, err)
+			}
+		case <-time.After(time.Second):
+			t.Error("expected queue to not start but did not failed onstart")
+		}
+	})
+}
+
+// Ensure Fetch method returns exact cached job execution error result.
+func TestFetch(t *testing.T) {
 	id := int64(1)
 	t.Run("no found", func(t *testing.T) {
 		q := New(SyncMode | TrackJobs)
-		err := q.Fetch(context.Background(), id)
+		err := q.Fetch(context.Background(), 1)
 		if err != ErrNotFound {
 			t.Fatalf("expect ErrNotFound but got %v", err)
 		}

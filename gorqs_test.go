@@ -112,6 +112,33 @@ func TestStart(t *testing.T) {
 	})
 }
 
+// Ensure call to stop the queue operates as expected.
+func TestStop(t *testing.T) {
+	t.Run("context cancel", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		q := &Queue{}
+		q.running.Store(true)
+		cancel()
+		if err := q.Stop(ctx); err != context.Canceled {
+			t.Errorf("expected %v but got %v", context.Canceled, err)
+		}
+		if status := q.running.Load(); !status {
+			t.Errorf("expected queue running status to be %v but got %v", true, status)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		q := &Queue{}
+		q.running.Store(true)
+		if err := q.Stop(context.Background()); err != nil {
+			t.Errorf("expected %v but got %v", nil, err)
+		}
+		if status := q.running.Load(); status {
+			t.Errorf("expected queue running status to be %v but got %v", false, status)
+		}
+	})
+}
+
 // Ensure Fetch method returns exact cached job execution error result.
 func TestFetch(t *testing.T) {
 	id := int64(1)

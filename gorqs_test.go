@@ -242,6 +242,15 @@ func TestStop(t *testing.T) {
 // Ensure Fetch method returns exact cached job execution error result.
 func TestFetch(t *testing.T) {
 	id := int64(1)
+	t.Run("not implemented", func(t *testing.T) {
+		qq := New(SyncMode)
+		qq.records.Store(id, nil)
+		result := qq.Fetch(context.Background(), id)
+		if result != ErrNotImplemented {
+			t.Fatalf("expect %v but got %v", ErrNotImplemented, result)
+		}
+	})
+
 	t.Run("no found", func(t *testing.T) {
 		q := New(SyncMode | TrackJobs)
 		err := q.Fetch(context.Background(), 1)

@@ -112,6 +112,106 @@ func TestStart(t *testing.T) {
 	})
 }
 
+// Ensure queuing a job returns expected id and error values.
+func TestPush(t *testing.T) {
+	t.Run("queue not running", func(t *testing.T) {
+		q := &Queue{}
+		id, err := q.Push(context.Background(), &job{})
+		if err != ErrQueueClosed {
+			t.Errorf("expected %v but got %v", ErrQueueClosed, err)
+		}
+		if id != -1 {
+			t.Errorf("expected %d but got %d", -1, id)
+		}
+	})
+
+	t.Run("success: sync queue intializes job with pending state", func(t *testing.T) {
+		q := New(SyncMode | TrackJobs)
+		q.running.Store(true)
+		id, err := q.Push(context.Background(), &job{})
+		if err != nil {
+			t.Fatalf("expected %v but got %v", nil, err)
+		}
+		if id != 1 {
+			t.Fatalf("expected %d but got %d", 1, id)
+		}
+
+		if r := q.fetcher(context.Background(), 1); r != ErrPending {
+			t.Errorf("expected %v but got %v", ErrPending, r)
+		}
+	})
+
+	t.Run("success: async queue does not intializes job state", func(t *testing.T) {
+		q := New(AsyncMode | TrackJobs)
+		q.running.Store(true)
+		id, err := q.Push(context.Background(), &job{})
+		if err != nil {
+			t.Fatalf("expected %v but got %v", nil, err)
+		}
+		if id != q.counter.Load() {
+			t.Fatalf("expected %d but got %d", 1, id)
+		}
+
+		if r := q.fetcher(context.Background(), int64(1)); r != ErrNotFound {
+			t.Errorf("expected %v but got %v", ErrNotFound, r)
+		}
+	})
+
+	t.Run("context cancelled", func(t *testing.T) {
+		q := New(SyncMode | TrackJobs)
+		q.running.Store(true)
+		// prefill the single buffer slot to prevent select clause to queue job.
+		q.jobsChan <- &job{}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		id, err := q.Push(ctx, &job{})
+		if err != context.Canceled {
+			t.Fatalf("expected %v but got %v", context.Canceled, err)
+		}
+		if id != -1 {
+			t.Fatalf("expected %d but got %d", -1, id)
+		}
+
+		if r := q.fetcher(context.Background(), int64(1)); r != ErrNotFound {
+			t.Errorf("expected %v but got %v", ErrNotFound, r)
+		}
+	})
+
+	t.Run("operation timed out", func(t *testing.T) {
+		q := New(SyncMode | TrackJobs)
+		q.running.Store(true)
+		// prefill the single buffer slot to prevent select clause to queue job.
+		q.jobsChan <- &job{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		var id int64
+		errCh := make(chan error)
+		go func(id *int64) {
+			val, err := q.Push(ctx, &job{})
+			*id = val
+			errCh <- err
+		}(&id)
+
+		select {
+		case err := <-errCh:
+			if err != ErrQueueBusy {
+				t.Fatalf("expected %v but got %v", ErrQueueBusy, err)
+			}
+			if id != -1 {
+				t.Fatalf("expected %d but got %d", -1, id)
+			}
+			if r := q.fetcher(context.Background(), q.counter.Load()); r != ErrNotFound {
+				t.Errorf("expected %v but got %v", ErrNotFound, r)
+			}
+		case <-ctx.Done():
+			t.Error("push operation on queue took too long")
+		}
+	})
+}
+
 // Ensure call to stop the queue operates as expected.
 func TestStop(t *testing.T) {
 	t.Run("context cancel", func(t *testing.T) {

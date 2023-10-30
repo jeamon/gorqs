@@ -9,7 +9,7 @@ var (
 	ErrNotFound       = errors.New("gorqs: job not found")
 	ErrInvalid        = errors.New("gorqs: found non error result")
 	ErrQueueClosed    = errors.New("gorqs: queue is closed")
-	ErrQueueBusy      = errors.New("gorqs: queue is busy so retry")
+	ErrTimeout        = errors.New("gorqs: operation took too long")
 	ErrUnknownMode    = errors.New("gorqs: unknown queue mode flag")
 	ErrInvalidMode    = errors.New("gorqs: invalid queue mode flag")
 	ErrNotImplemented = errors.New("gorqs: feature not enabled. add TrackJobs flag when creating the queue")

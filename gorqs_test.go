@@ -197,8 +197,8 @@ func TestPush(t *testing.T) {
 
 		select {
 		case err := <-errCh:
-			if err != ErrQueueBusy {
-				t.Fatalf("expected %v but got %v", ErrQueueBusy, err)
+			if err != ErrTimeout {
+				t.Fatalf("expected %v but got %v", ErrTimeout, err)
 			}
 			if id != -1 {
 				t.Fatalf("expected %d but got %d", -1, id)

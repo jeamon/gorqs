@@ -124,7 +124,7 @@ func (q *Queue) astart(ctx context.Context) error {
 // unique job id (int64) and nil as error. Then records into the cache an
 // initial state of the job result as ErrPending.
 // If the queue service is stopped, it returns ErrQueueClosed. If after 10ms
-// the the job is not enqueued it returns ErrQueueBusy. In case the context
+// the the job is not enqueued it returns ErrTimeout. In case the context
 // is done or fail to enqueue the job, it ensures the job id is not cached.
 func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 	if !q.running.Load() {
@@ -151,7 +151,7 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 		if recorded {
 			q.records.Delete(id)
 		}
-		return -1, ErrQueueBusy
+		return -1, ErrTimeout
 	}
 }
 

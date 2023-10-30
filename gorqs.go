@@ -131,20 +131,26 @@ func (q *Queue) Push(ctx context.Context, r Runner) (int64, error) {
 		return -1, ErrQueueClosed
 	}
 
+	recorded := false
 	id := q.counter.Add(1)
 	if q.mode == SyncMode {
 		q.recorder(id, ErrPending)
+		recorded = true
 	}
 	timer := time.NewTimer(10 * time.Millisecond)
 	defer timer.Stop()
 	select {
 	case <-ctx.Done():
-		q.records.Delete(id)
+		if recorded {
+			q.records.Delete(id)
+		}
 		return -1, ctx.Err()
 	case q.jobsChan <- &job{id, r}:
 		return id, nil
 	case <-timer.C:
-		q.records.Delete(id)
+		if recorded {
+			q.records.Delete(id)
+		}
 		return -1, ErrQueueBusy
 	}
 }

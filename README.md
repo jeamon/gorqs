@@ -14,6 +14,7 @@ The mode defines wether each added job should be processed *synchronously* or *a
 | Push(context.Context, Runner) (int64, error) | adds a job to the queue asynchronously |
 | Fetch(context.Context, int64) error | gets result execution of given job |
 | Clear | delete all jobs results records |
+| IsRunning() bool | provides queue service status |
 
 *An acceptable runnable job should implement the `Runner` interface defined as below :*
 
@@ -48,6 +49,33 @@ $ git clone https://github.com/jeamon/gorqs.git
 $ cd gorqs
 $ go run examples/sync-mode/example.go
 $ go run examples/async-mode/example.go
+```
+
+## Coverage
+
+```shell
+$ make coverc
+go clean -testcache
+go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+ok      github.com/jeamon/gorqs 6.909s  coverage: 100.0% of statements
+github.com/jeamon/gorqs/gorqs.go:13:    New             100.0%
+github.com/jeamon/gorqs/gorqs.go:41:    Start           100.0%
+github.com/jeamon/gorqs/gorqs.go:56:    sconsumer       100.0%
+github.com/jeamon/gorqs/gorqs.go:79:    sstart          100.0%
+github.com/jeamon/gorqs/gorqs.go:102:   astart          100.0%
+github.com/jeamon/gorqs/gorqs.go:129:   Push            100.0%
+github.com/jeamon/gorqs/gorqs.go:159:   Stop            100.0%
+github.com/jeamon/gorqs/gorqs.go:170:   Clear           100.0%
+github.com/jeamon/gorqs/gorqs.go:178:   IsRunning       100.0%
+github.com/jeamon/gorqs/gorqs.go:187:   Fetch           100.0%
+github.com/jeamon/gorqs/gorqs.go:193:   fetch           100.0%
+github.com/jeamon/gorqs/job.go:36:      getID           100.0%
+github.com/jeamon/gorqs/job.go:41:      Run             100.0%
+github.com/jeamon/gorqs/slist.go:22:    list            100.0%
+github.com/jeamon/gorqs/slist.go:30:    isEmpty         100.0%
+github.com/jeamon/gorqs/slist.go:35:    push            100.0%
+github.com/jeamon/gorqs/slist.go:59:    pop             100.0%
+total:                                  (statements)    100.0%
 ```
 
 ## Contact

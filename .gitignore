@@ -9,6 +9,7 @@ cpuprofile
 
 # Output of the go coverage tool
 *.out
+*.txt
 
 # vscode IDE specific
 .vscode

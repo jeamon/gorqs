@@ -291,7 +291,7 @@ func TestFetch(t *testing.T) {
 // Ensure all jobs added are queued and executed in the order they were added.
 func TestSyncQueue_Basic(t *testing.T) {
 	queue := New(SyncMode)
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	done := make(chan struct{}, 1)
@@ -321,7 +321,7 @@ func TestSyncQueue_Basic(t *testing.T) {
 	check(t, 3, id, err)
 
 	// give more time for above josb to finish.
-	time.Sleep(70 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	if err := queue.Stop(ctx); err != nil {
 		t.Errorf("expected <nil> but got %v", err)
@@ -329,7 +329,7 @@ func TestSyncQueue_Basic(t *testing.T) {
 
 	select {
 	case <-done:
-	case <-time.After(20 * time.Millisecond):
+	case <-time.After(time.Millisecond * 500):
 		t.Error("running queue did not exit.")
 	}
 

@@ -1,6 +1,6 @@
 # gorqs
 
-[![Build Status](https://github.com/jeamon/gorqs/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jeamon/gorqs/actions)
+[![Build Status](https://github.com/jeamon/gorqs/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/jeamon/gorqs/actions)
 [![godoc](https://godoc.org/github.com/jeamon/gorqs?status.svg)](https://godoc.org/github.com/jeamon/gorqs)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jeamon/gorqs)](https://goreportcard.com/report/github.com/jeamon/gorqs)
 [![codecov](https://codecov.io/gh/jeamon/gorqs/graph/badge.svg?token=AKQ6PV9N90)](https://codecov.io/gh/jeamon/gorqs)

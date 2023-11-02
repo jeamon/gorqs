@@ -1,4 +1,4 @@
-name: ci
+name: tests
 on:
   push:
     branches: ['*']
@@ -12,7 +12,12 @@ jobs:
     strategy:
       matrix:
         go-version: [1.21.x, 1.20.x]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
+        include:
+        # include windows-latest for latest go version only
+        # windows execution is quiet slow on Github runners.
+          - go-version: 1.21.x
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
     - name: Install Go
@@ -30,5 +35,11 @@ jobs:
       with:
         version: v1.54
         args: -v --timeout=5m --issues-exit-code=0
-    - name: Run tests
+    - name: Run Tests
       run: make test-cover
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

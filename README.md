@@ -1,5 +1,12 @@
 # gorqs
 
+[![Build Status](https://github.com/jeamon/gorqs/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jeamon/gorqs/actions)
+[![godoc](https://godoc.org/github.com/jeamon/gorqs?status.svg)](https://godoc.org/github.com/jeamon/gorqs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jeamon/gorqs)](https://goreportcard.com/report/github.com/jeamon/gorqs)
+[![codecov](https://codecov.io/gh/jeamon/gorqs/graph/badge.svg?token=AKQ6PV9N90)](https://codecov.io/gh/jeamon/gorqs)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jeamon/gorqs)
+[![MIT License](https://img.shields.io/github/license/jeamon/gorqs)](https://github.com/jeamon/gorqs/blob/main/LICENSE)
+
 `gorqs` means *Go Runnable Queue Service*. This is a multi-features go-based concurrent-safe library to **queue & execute** jobs and records their execution result. You can start the Queue service into synchronous or asynchronous mode.
 The mode defines wether each added job should be processed *synchronously* or *asynchronously*. Be aware that adding a job to the Queue system is always a non-blocking operation and returns the job id on success. 
 

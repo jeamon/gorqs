@@ -58,33 +58,6 @@ $ go run examples/sync-mode/example.go
 $ go run examples/async-mode/example.go
 ```
 
-## Coverage
-
-```shell
-$ make coverc
-go clean -testcache
-go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
-ok      github.com/jeamon/gorqs 6.909s  coverage: 100.0% of statements
-github.com/jeamon/gorqs/gorqs.go:13:    New             100.0%
-github.com/jeamon/gorqs/gorqs.go:41:    Start           100.0%
-github.com/jeamon/gorqs/gorqs.go:56:    sconsumer       100.0%
-github.com/jeamon/gorqs/gorqs.go:79:    sstart          100.0%
-github.com/jeamon/gorqs/gorqs.go:102:   astart          100.0%
-github.com/jeamon/gorqs/gorqs.go:129:   Push            100.0%
-github.com/jeamon/gorqs/gorqs.go:159:   Stop            100.0%
-github.com/jeamon/gorqs/gorqs.go:170:   Clear           100.0%
-github.com/jeamon/gorqs/gorqs.go:178:   IsRunning       100.0%
-github.com/jeamon/gorqs/gorqs.go:187:   Fetch           100.0%
-github.com/jeamon/gorqs/gorqs.go:193:   fetch           100.0%
-github.com/jeamon/gorqs/job.go:36:      getID           100.0%
-github.com/jeamon/gorqs/job.go:41:      Run             100.0%
-github.com/jeamon/gorqs/slist.go:22:    list            100.0%
-github.com/jeamon/gorqs/slist.go:30:    isEmpty         100.0%
-github.com/jeamon/gorqs/slist.go:35:    push            100.0%
-github.com/jeamon/gorqs/slist.go:59:    pop             100.0%
-total:                                  (statements)    100.0%
-```
-
 ## Contact
 
 Feel free to [reach out to me](https://blog.cloudmentor-scale.com/contact) before any action. Feel free to connect on [Twitter](https://twitter.com/jerome_amon) or [linkedin](https://www.linkedin.com/in/jeromeamon/)

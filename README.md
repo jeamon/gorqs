@@ -8,7 +8,7 @@
 [![MIT License](https://img.shields.io/github/license/jeamon/gorqs)](https://github.com/jeamon/gorqs/blob/main/LICENSE)
 
 **`gorqs`** means *Go Runnable Queue Service*. This is a multi-features go-based concurrent-safe library to **queue & execute** jobs and records their execution result. You can start the Queue service into synchronous or asynchronous mode.
-The mode defines wether each added job should be processed *synchronously* or *asynchronously*. Be aware that adding a job to the Queue system is always a non-blocking operation and returns the job id on success. 
+The mode defines wether each added job should be processed *synchronously* or *asynchronously*. Be aware that adding a job to the Queue system is always a non-blocking operation and returns the job id on success. Fetching a given job execution result removes that entry from local records cache.
 
 ## Features
 

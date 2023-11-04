@@ -7,7 +7,7 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jeamon/gorqs)
 [![MIT License](https://img.shields.io/github/license/jeamon/gorqs)](https://github.com/jeamon/gorqs/blob/main/LICENSE)
 
-`gorqs` means *Go Runnable Queue Service*. This is a multi-features go-based concurrent-safe library to **queue & execute** jobs and records their execution result. You can start the Queue service into synchronous or asynchronous mode.
+**`gorqs`** means *Go Runnable Queue Service*. This is a multi-features go-based concurrent-safe library to **queue & execute** jobs and records their execution result. You can start the Queue service into synchronous or asynchronous mode.
 The mode defines wether each added job should be processed *synchronously* or *asynchronously*. Be aware that adding a job to the Queue system is always a non-blocking operation and returns the job id on success. 
 
 ## Features
@@ -16,12 +16,12 @@ The mode defines wether each added job should be processed *synchronously* or *a
 
 | Action | Description |
 |:------ | :-------------------------------------- |
-| `**Start(context.Context) error**` | starts the jobs queue |
-| `**Stop(context.Context) error**` | stops the jobs queue |
-| `**Push(context.Context, Runner) (int64, error)**` | adds a job to the queue asynchronously |
-| `**Fetch(context.Context, int64) error**` | gets result execution of given job |
-| `**IsRunning() bool**` | provides queue service status |
-| `**Clear()**` | delete all jobs results records |
+| **`Start(context.Context) error`** | starts the jobs queue |
+| **`Stop(context.Context) error`** | stops the jobs queue |
+| **`Push(context.Context, Runner) (int64, error)`** | adds a job to the queue asynchronously |
+| **`Fetch(context.Context, int64) error`** | gets result execution of given job |
+| **`IsRunning() bool`** | provides queue service status |
+| **`Clear()`** | delete all jobs results records |
 
 *An acceptable runnable job should implement the `Runner` interface defined as below :*
 

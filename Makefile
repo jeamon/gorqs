@@ -44,3 +44,8 @@ cover: coverc coverh ## Coverage stats on console and browser.
 .PHONY: format
 format: ## Format all codebase.
 	gofumpt -l -w .
+
+.PHONY: vuln
+vuln: ## Run go vulnerability scanner.
+	which govulncheck || go install golang.org/x/vuln/cmd/govulncheck@latest
+	govulncheck ./...

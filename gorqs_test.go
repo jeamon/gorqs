@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -302,11 +303,14 @@ func TestSyncQueue_Basic(t *testing.T) {
 		done <- struct{}{}
 	}()
 
+	mu := &sync.Mutex{}
 	results := make([]string, 0, 3)
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(10 * time.Millisecond)
+			mu.Lock()
 			results = append(results, id)
+			mu.Unlock()
 			return nil
 		})
 	}
@@ -402,12 +406,14 @@ func TestAsyncQueue_Basic(t *testing.T) {
 		}
 		done <- struct{}{}
 	}()
-
+	mu := &sync.Mutex{}
 	results := make([]string, 0, 3)
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(time.Second)
+			mu.Lock()
 			results = append(results, id)
+			mu.Unlock()
 			return nil
 		})
 	}
@@ -460,12 +466,14 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 		}
 		done <- struct{}{}
 	}()
-
+	mu := &sync.Mutex{}
 	results := make([]string, 0, 2)
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(time.Second)
+			mu.Lock()
 			results = append(results, id)
+			mu.Unlock()
 			return nil
 		})
 	}
@@ -489,8 +497,10 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Error("running queue did not exit.")
 	}
-
-	if lg := len(results); lg != 2 {
+	mu.Lock()
+	lg := len(results)
+	mu.Unlock()
+	if lg != 2 {
 		t.Fatalf("invalid results length. expected 2 but got %d", lg)
 		return
 	}
@@ -517,12 +527,14 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 		}
 		done <- struct{}{}
 	}()
-
+	mu := &sync.Mutex{}
 	results := make([]string, 0, 2)
 	makeJob := func(id string) Runner {
 		return basicTestJob(func() error {
 			time.Sleep(time.Second)
+			mu.Lock()
 			results = append(results, id)
+			mu.Unlock()
 			return nil
 		})
 	}
@@ -540,7 +552,10 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 		t.Error("running queue did not exit.")
 	}
 
-	if lg := len(results); lg != 2 {
+	mu.Lock()
+	lg := len(results)
+	mu.Unlock()
+	if lg != 2 {
 		t.Fatalf("invalid results. expected 2 items but got %d", lg)
 		return
 	}

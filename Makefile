@@ -26,13 +26,9 @@ clean: ## Remove temporary files and cached tests results.
 test: clean ## Remove cache and Run unit tests only.
 	go test -v -timeout 2m -count=1 ./...
 
-.PHONY: test-race
-test-race: clean ## Remove cache and Run unit tests with race flag.
-	CGO_ENABLED=1 go test -race -v -timeout 2m -count=1 ./...
-
 .PHONY: test-cover
 test-cover: clean ## Remove tests cache and run tests with coverage.
-	go test -v -timeout 2m -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
+	go test -race -v -timeout 2m -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
 
 .PHONY: coverc
 coverc: clean ## Testing coverage and view stats in console.

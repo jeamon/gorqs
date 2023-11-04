@@ -437,8 +437,10 @@ func TestAsyncQueue_Basic(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Error("running queue did not exit.")
 	}
-
-	if lg := len(results); lg != 3 {
+	mu.Lock()
+	lg := len(results)
+	mu.Unlock()
+	if lg != 3 {
 		t.Fatalf("invalid results length. expected 3 but got %d", lg)
 		return
 	}
@@ -504,11 +506,16 @@ func TestSyncQueue_StopOngoing(t *testing.T) {
 		t.Fatalf("invalid results length. expected 2 but got %d", lg)
 		return
 	}
-
-	if results[0] != "job1" {
+	mu.Lock()
+	r := results[0]
+	mu.Unlock()
+	if r != "job1" {
 		t.Errorf("expected %q but got %s", "job1", results[0])
 	}
-	if results[1] != "job2" {
+	mu.Lock()
+	r = results[1]
+	mu.Unlock()
+	if r != "job2" {
 		t.Errorf("expected %q but got %s", "job2", results[1])
 	}
 }
@@ -559,10 +566,16 @@ func TestSyncQueue_TimeoutOngoing(t *testing.T) {
 		t.Fatalf("invalid results. expected 2 items but got %d", lg)
 		return
 	}
-	if results[0] != "job1" {
+	mu.Lock()
+	r := results[0]
+	mu.Unlock()
+	if r != "job1" {
 		t.Errorf("expected %q but got %s", "job1", results[0])
 	}
-	if results[1] != "job2" {
+	mu.Lock()
+	r = results[1]
+	mu.Unlock()
+	if r != "job2" {
 		t.Errorf("expected %q but got %s", "job2", results[1])
 	}
 }

@@ -8,7 +8,7 @@ on:
     paths-ignore: ['**.md']
 
 jobs:
-  test-build:
+  tests:
     strategy:
       matrix:
         go-version: [1.21.x, 1.20.x]
@@ -35,6 +35,13 @@ jobs:
       with:
         version: v1.54
         args: -v --timeout=5m --issues-exit-code=0
+    - name: Run govulncheck
+      # do not prevent ci to succeed.
+      continue-on-error: true
+      uses: golang/govulncheck-action@v1
+      with:
+        # do not specify go-version-input to use pre-installed.
+        go-package: ./...
     - name: Run Tests
       run: make test-cover
     - name: Upload coverage to Codecov

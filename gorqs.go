@@ -190,18 +190,22 @@ func (q *Queue) Fetch(ctx context.Context, id int64) error {
 
 // fetch is the internal function invoked to retrieve a given job execution result
 // based on its id if this feature was enabled during the Queue initialization.
+// It deletes the record from the cache in case the job execution is completed.
 func (q *Queue) fetch(_ context.Context, id int64) error {
-	v, found := q.records.LoadAndDelete(id)
+	v, found := q.records.Load(id)
 	if !found {
 		return ErrNotFound
 	}
 	if v == nil {
 		return nil
 	}
+	if v == ErrPending || v == ErrRunning {
+		return v.(error)
+	}
 	err, found := v.(error)
+	q.records.Delete(id)
 	if !found {
 		return ErrInvalid
 	}
-
 	return err
 }

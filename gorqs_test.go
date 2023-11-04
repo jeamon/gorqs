@@ -278,6 +278,34 @@ func TestFetch(t *testing.T) {
 		}
 	})
 
+	t.Run("pending", func(t *testing.T) {
+		q := New(SyncMode | TrackJobs)
+		q.records.Store(id, ErrPending)
+		err := q.Fetch(context.Background(), id)
+		if err != ErrPending {
+			t.Fatalf("expect ErrPending but got %v", err)
+		}
+
+		err = q.Fetch(context.Background(), id)
+		if err != ErrPending {
+			t.Fatalf("expect not deleted entry so again ErrPending but got %v", err)
+		}
+	})
+
+	t.Run("running", func(t *testing.T) {
+		q := New(SyncMode | TrackJobs)
+		q.records.Store(id, ErrRunning)
+		err := q.Fetch(context.Background(), id)
+		if err != ErrRunning {
+			t.Fatalf("expect ErrRunning but got %v", err)
+		}
+
+		err = q.Fetch(context.Background(), id)
+		if err != ErrRunning {
+			t.Fatalf("expect not deleted entry so again ErrRunning but got %v", err)
+		}
+	})
+
 	t.Run("ok", func(t *testing.T) {
 		err := errors.New("job execution error")
 		qq := New(SyncMode | TrackJobs)
@@ -285,6 +313,11 @@ func TestFetch(t *testing.T) {
 		result := qq.Fetch(context.Background(), id)
 		if result != err {
 			t.Fatalf("expect %v but got %v", err, result)
+		}
+
+		result = qq.Fetch(context.Background(), id)
+		if result != ErrNotFound {
+			t.Fatalf("expect deleted entry so ErrNotFound but got %v", result)
 		}
 	})
 }
